@@ -12,6 +12,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 
 DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
@@ -38,17 +39,26 @@ def generate_maze(width, height):
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Maze Game")
 
+def generate_goal(maze):
+    while True:
+        goal_x = random.randint(0, MAZE_WIDTH - 1)
+        goal_y = random.randint(0, MAZE_HEIGHT - 1)
+        if maze[goal_y][goal_x] == 0 and (goal_x, goal_y) != (0, 0):
+            return goal_x, goal_y
+
 maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
+goal_x, goal_y = generate_goal(maze)
 
 player_x, player_y = 0, 0
 
-def draw_maze(maze, player_pos):
+def draw_maze(maze, player_pos, goal_pos):
     screen.fill(WHITE)
     for y, row in enumerate(maze):
         for x, cell in enumerate(row):
             color = BLACK if cell == 1 else WHITE
             pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     pygame.draw.rect(screen, RED, (player_pos[0] * CELL_SIZE, player_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    pygame.draw.rect(screen, GREEN, (goal_pos[0] * CELL_SIZE, goal_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     pygame.display.flip()
 
 clock = pygame.time.Clock()
@@ -69,7 +79,11 @@ while running:
     if keys[pygame.K_DOWN] and player_y < MAZE_HEIGHT - 1 and maze[player_y + 1][player_x] == 0:
         player_y += 1
 
-    draw_maze(maze, (player_x, player_y))
+    if (player_x, player_y) == (goal_x, goal_y):
+        print("Congratulations! You reached the goal!")
+        running = False
+
+    draw_maze(maze, (player_x, player_y), (goal_x, goal_y))
 
     clock.tick(FPS)
 
