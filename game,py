@@ -13,6 +13,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+YELLOW = (255, 255, 0)
 
 DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
@@ -54,7 +55,7 @@ player_x, player_y = 0, 0
 start_time = time.time()
 timer_duration = 60  
 
-font = pygame.font.SysFont(None, 36)
+font = pygame.font.SysFont(None, 48)
 
 def draw_maze(maze, player_pos, goal_pos, remaining_time):
     screen.fill(WHITE)
@@ -65,8 +66,12 @@ def draw_maze(maze, player_pos, goal_pos, remaining_time):
     pygame.draw.rect(screen, RED, (player_pos[0] * CELL_SIZE, player_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     pygame.draw.rect(screen, GREEN, (goal_pos[0] * CELL_SIZE, goal_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
+    timer_text_surface = pygame.Surface((250, 50))
+    timer_text_surface.fill(YELLOW)
+    screen.blit(timer_text_surface, (10, 10))
+
     time_text = font.render(f'Time Left: {remaining_time}s', True, BLACK)
-    screen.blit(time_text, (10, 10))
+    screen.blit(time_text, (20, 20))
 
     pygame.display.flip()
 
