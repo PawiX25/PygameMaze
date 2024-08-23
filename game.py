@@ -40,12 +40,14 @@ def generate_maze(width, height):
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Maze Game")
 
-def generate_goal(maze):
+def generate_goal(maze, min_distance=10):
     while True:
         goal_x = random.randint(0, MAZE_WIDTH - 1)
         goal_y = random.randint(0, MAZE_HEIGHT - 1)
         if maze[goal_y][goal_x] == 0 and (goal_x, goal_y) != (0, 0):
-            return goal_x, goal_y
+            distance = abs(goal_x - 0) + abs(goal_y - 0)
+            if distance >= min_distance:
+                return goal_x, goal_y
 
 maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
 goal_x, goal_y = generate_goal(maze)
