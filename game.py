@@ -51,20 +51,37 @@ maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
 goal_x, goal_y = generate_goal(maze)
 
 player_x, player_y = 0, 0
+target_x, target_y = player_x, player_y
+animation_speed = 0.1
+moving = False
 
 start_time = time.time()
 timer_duration = 60  
 
 font = pygame.font.SysFont(None, 48)
 
+goal_blink_time = 0.5
+goal_blink_state = True
+goal_blink_start = time.time()
+
 def draw_maze(maze, player_pos, goal_pos, remaining_time):
+    global goal_blink_state, goal_blink_start
+
     screen.fill(WHITE)
+
     for y, row in enumerate(maze):
         for x, cell in enumerate(row):
             color = BLACK if cell == 1 else WHITE
             pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    
+    if time.time() - goal_blink_start >= goal_blink_time:
+        goal_blink_state = not goal_blink_state
+        goal_blink_start = time.time()
+
+    if goal_blink_state:
+        pygame.draw.rect(screen, GREEN, (goal_pos[0] * CELL_SIZE, goal_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    
     pygame.draw.rect(screen, RED, (player_pos[0] * CELL_SIZE, player_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-    pygame.draw.rect(screen, GREEN, (goal_pos[0] * CELL_SIZE, goal_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
     timer_text_surface = pygame.Surface((250, 50))
     timer_text_surface.fill(YELLOW)
@@ -84,17 +101,36 @@ while running:
             running = False
 
     keys = pygame.key.get_pressed()
+    new_x, new_y = player_x, player_y
     if keys[pygame.K_LEFT] and player_x > 0 and maze[player_y][player_x - 1] == 0:
-        player_x -= 1
+        new_x = player_x - 1
+        moving = True
     if keys[pygame.K_RIGHT] and player_x < MAZE_WIDTH - 1 and maze[player_y][player_x + 1] == 0:
-        player_x += 1
+        new_x = player_x + 1
+        moving = True
     if keys[pygame.K_UP] and player_y > 0 and maze[player_y - 1][player_x] == 0:
-        player_y -= 1
+        new_y = player_y - 1
+        moving = True
     if keys[pygame.K_DOWN] and player_y < MAZE_HEIGHT - 1 and maze[player_y + 1][player_x] == 0:
-        player_y += 1
+        new_y = player_y + 1
+        moving = True
+
+    if moving:
+        target_x, target_y = new_x, new_y
+        moving = False
 
     elapsed_time = time.time() - start_time
     remaining_time = max(0, timer_duration - int(elapsed_time))
+    
+    if player_x != target_x or player_y != target_y:
+        dx = (target_x - player_x) * animation_speed
+        dy = (target_y - player_y) * animation_speed
+        player_x += dx
+        player_y += dy
+        if abs(player_x - target_x) < 1 and abs(player_y - target_y) < 1:
+            player_x, player_y = target_x, target_y
+    else:
+        player_x, player_y = int(player_x), int(player_y)
 
     if (player_x, player_y) == (goal_x, goal_y):
         print("Congratulations! You reached the goal!")
@@ -104,7 +140,7 @@ while running:
         print("Time's up! Game Over.")
         running = False
 
-    draw_maze(maze, (player_x, player_y), (goal_x, goal_y), remaining_time)
+    draw_maze(maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time)
 
     clock.tick(FPS)
 
