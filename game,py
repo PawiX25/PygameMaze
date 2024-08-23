@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 
 pygame.init()
 
@@ -12,7 +13,6 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
 
 DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
@@ -51,7 +51,12 @@ goal_x, goal_y = generate_goal(maze)
 
 player_x, player_y = 0, 0
 
-def draw_maze(maze, player_pos, goal_pos):
+start_time = time.time()
+timer_duration = 60  
+
+font = pygame.font.SysFont(None, 36)
+
+def draw_maze(maze, player_pos, goal_pos, remaining_time):
     screen.fill(WHITE)
     for y, row in enumerate(maze):
         for x, cell in enumerate(row):
@@ -59,6 +64,10 @@ def draw_maze(maze, player_pos, goal_pos):
             pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     pygame.draw.rect(screen, RED, (player_pos[0] * CELL_SIZE, player_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     pygame.draw.rect(screen, GREEN, (goal_pos[0] * CELL_SIZE, goal_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+    time_text = font.render(f'Time Left: {remaining_time}s', True, BLACK)
+    screen.blit(time_text, (10, 10))
+
     pygame.display.flip()
 
 clock = pygame.time.Clock()
@@ -79,11 +88,18 @@ while running:
     if keys[pygame.K_DOWN] and player_y < MAZE_HEIGHT - 1 and maze[player_y + 1][player_x] == 0:
         player_y += 1
 
+    elapsed_time = time.time() - start_time
+    remaining_time = max(0, timer_duration - int(elapsed_time))
+
     if (player_x, player_y) == (goal_x, goal_y):
         print("Congratulations! You reached the goal!")
         running = False
 
-    draw_maze(maze, (player_x, player_y), (goal_x, goal_y))
+    if remaining_time <= 0:
+        print("Time's up! Game Over.")
+        running = False
+
+    draw_maze(maze, (player_x, player_y), (goal_x, goal_y), remaining_time)
 
     clock.tick(FPS)
 
