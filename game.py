@@ -104,16 +104,16 @@ while running:
 
     keys = pygame.key.get_pressed()
     new_x, new_y = player_x, player_y
-    if keys[pygame.K_LEFT] and player_x > 0 and maze[player_y][player_x - 1] == 0:
+    if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player_x > 0 and maze[player_y][player_x - 1] == 0:
         new_x = player_x - 1
         moving = True
-    if keys[pygame.K_RIGHT] and player_x < MAZE_WIDTH - 1 and maze[player_y][player_x + 1] == 0:
+    if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player_x < MAZE_WIDTH - 1 and maze[player_y][player_x + 1] == 0:
         new_x = player_x + 1
         moving = True
-    if keys[pygame.K_UP] and player_y > 0 and maze[player_y - 1][player_x] == 0:
+    if (keys[pygame.K_UP] or keys[pygame.K_w]) and player_y > 0 and maze[player_y - 1][player_x] == 0:
         new_y = player_y - 1
         moving = True
-    if keys[pygame.K_DOWN] and player_y < MAZE_HEIGHT - 1 and maze[player_y + 1][player_x] == 0:
+    if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player_y < MAZE_HEIGHT - 1 and maze[player_y + 1][player_x] == 0:
         new_y = player_y + 1
         moving = True
 
