@@ -74,10 +74,10 @@ def draw_maze(screen, maze, player_pos, goal_pos, remaining_time, font):
 
     pygame.display.flip()
 
-def display_restart_screen(screen, font):
+def display_game_over_screen(screen, font, message):
     screen.fill(WHITE)
     text_lines = [
-        "Game Over!",
+        message,
         "Press 'R' to Restart",
         "Press 'Q' to Quit"
     ]
@@ -89,43 +89,101 @@ def display_restart_screen(screen, font):
         y_start += text_surface.get_height()
     pygame.display.flip()
 
-def main():
+def show_main_menu(screen, font):
+    while True:
+        screen.fill(WHITE)
+        text_lines = [
+            "Main Menu",
+            "Press 'S' to Start",
+            "Press 'I' for Instructions",
+            "Press 'Q' to Quit"
+        ]
+        text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
+        total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
+        y_start = HEIGHT // 2 - total_height // 2
+        for text_surface in text_surfaces:
+            screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+            y_start += text_surface.get_height()
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return None
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_s:
+                    return "start"
+                if event.key == pygame.K_i:
+                    return "instructions"
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    return None
+
+def show_instructions(screen, font):
+    while True:
+        screen.fill(WHITE)
+        text_lines = [
+            "Instructions",
+            "Use arrow keys or WASD to move",
+            "Reach the green goal to win",
+            "Press 'P' to Pause",
+            "Press 'Q' to Quit"
+        ]
+        text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
+        total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
+        y_start = HEIGHT // 2 - total_height // 2
+        for text_surface in text_surfaces:
+            screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+            y_start += text_surface.get_height()
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    return
+                if event.key == pygame.K_i:
+                    return
+
+def game_loop(screen, font):
     global goal_blink_time, goal_blink_state, goal_blink_start
 
     goal_blink_time = 0.5
     goal_blink_state = True
     goal_blink_start = time.time()
 
-    while True:
-        font = pygame.font.SysFont(None, 36)  
-        screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Maze Game")
+    maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
+    goal_x, goal_y = generate_goal(maze)
+    player_x, player_y = 0, 0
+    target_x, target_y = player_x, player_y
+    animation_progress = 1.0
+    animation_speed = 15
 
-        maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
-        goal_x, goal_y = generate_goal(maze)
-        player_x, player_y = 0, 0
-        target_x, target_y = player_x, player_y
-        animation_progress = 1.0
-        animation_speed = 15
+    start_time = time.time()
+    timer_duration = 60
 
-        start_time = time.time()
-        timer_duration = 60
+    clock = pygame.time.Clock()
+    running = True
+    paused = False
 
-        clock = pygame.time.Clock()
-        running = True
-
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    paused = not paused
+                if event.key == pygame.K_r:
+                    return True
+                if event.key == pygame.K_q:
                     pygame.quit()
-                    return
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:
-                        running = False
-                    if event.key == pygame.K_q:
-                        pygame.quit()
-                        return
+                    return False
 
+        if not paused:
             keys = pygame.key.get_pressed()
             if animation_progress >= 1.0:
                 new_x, new_y = player_x, player_y
@@ -153,30 +211,50 @@ def main():
             remaining_time = max(0, timer_duration - int(elapsed_time))
 
             if int(player_x) == goal_x and int(player_y) == goal_y:
-                print("Congratulations! You reached the goal!")
-                running = False
+                display_game_over_screen(screen, font, "Congratulations! You reached the goal!")
+                pygame.display.flip()
+                while True:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            return False
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_r:
+                                return True
+                            if event.key == pygame.K_q:
+                                pygame.quit()
+                                return False
 
             if remaining_time <= 0:
-                print("Time's up! Game Over.")
-                running = False
+                display_game_over_screen(screen, font, "Time's up! Game Over.")
+                pygame.display.flip()
+                while True:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            return False
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_r:
+                                return True
+                            if event.key == pygame.K_q:
+                                pygame.quit()
+                                return False
 
             draw_maze(screen, maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time, font)
-
             clock.tick(FPS)
 
-        display_restart_screen(screen, font)
+def main():
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Maze Game")
+    font = pygame.font.SysFont(None, 36)
 
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:
-                        break
-                    if event.key == pygame.K_q:
-                        pygame.quit()
-                        return
+    while True:
+        menu_choice = show_main_menu(screen, font)
+        if menu_choice == "instructions":
+            show_instructions(screen, font)
+        elif menu_choice == "start":
+            if not game_loop(screen, font):
+                break
 
 if __name__ == "__main__":
     main()
