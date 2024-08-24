@@ -54,8 +54,8 @@ goal_x, goal_y = generate_goal(maze)
 
 player_x, player_y = 0, 0
 target_x, target_y = player_x, player_y
-animation_speed = 0.1
-moving = False
+animation_progress = 1.0  
+animation_speed = 15  
 
 start_time = time.time()
 timer_duration = 60  
@@ -103,38 +103,32 @@ while running:
             running = False
 
     keys = pygame.key.get_pressed()
-    new_x, new_y = player_x, player_y
-    if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player_x > 0 and maze[player_y][player_x - 1] == 0:
-        new_x = player_x - 1
-        moving = True
-    if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player_x < MAZE_WIDTH - 1 and maze[player_y][player_x + 1] == 0:
-        new_x = player_x + 1
-        moving = True
-    if (keys[pygame.K_UP] or keys[pygame.K_w]) and player_y > 0 and maze[player_y - 1][player_x] == 0:
-        new_y = player_y - 1
-        moving = True
-    if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player_y < MAZE_HEIGHT - 1 and maze[player_y + 1][player_x] == 0:
-        new_y = player_y + 1
-        moving = True
+    if animation_progress >= 1.0:  
+        new_x, new_y = player_x, player_y
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and int(player_x) > 0 and maze[int(player_y)][int(player_x) - 1] == 0:
+            new_x = player_x - 1
+        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and int(player_x) < MAZE_WIDTH - 1 and maze[int(player_y)][int(player_x) + 1] == 0:
+            new_x = player_x + 1
+        if (keys[pygame.K_UP] or keys[pygame.K_w]) and int(player_y) > 0 and maze[int(player_y) - 1][int(player_x)] == 0:
+            new_y = player_y - 1
+        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and int(player_y) < MAZE_HEIGHT - 1 and maze[int(player_y) + 1][int(player_x)] == 0:
+            new_y = player_y + 1
 
-    if moving:
-        target_x, target_y = new_x, new_y
-        moving = False
+        if (new_x, new_y) != (player_x, player_y):
+            target_x, target_y = new_x, new_y
+            animation_progress = 0.0  
+
+    if animation_progress < 1.0:
+        animation_progress += animation_speed / FPS
+        animation_progress = min(animation_progress, 1.0)  
+
+        player_x = player_x + (target_x - player_x) * animation_progress
+        player_y = player_y + (target_y - player_y) * animation_progress
 
     elapsed_time = time.time() - start_time
     remaining_time = max(0, timer_duration - int(elapsed_time))
 
-    if player_x != target_x or player_y != target_y:
-        dx = (target_x - player_x) * animation_speed
-        dy = (target_y - player_y) * animation_speed
-        player_x += dx
-        player_y += dy
-        if abs(player_x - target_x) < 1 and abs(player_y - target_y) < 1:
-            player_x, player_y = target_x, target_y
-    else:
-        player_x, player_y = int(player_x), int(player_y)
-
-    if (player_x, player_y) == (goal_x, goal_y):
+    if int(player_x) == goal_x and int(player_y) == goal_y:
         print("Congratulations! You reached the goal!")
         running = False
 
