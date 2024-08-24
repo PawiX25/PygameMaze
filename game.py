@@ -75,22 +75,22 @@ def draw_maze(maze, player_pos, goal_pos, remaining_time):
         for x, cell in enumerate(row):
             color = BLACK if cell == 1 else WHITE
             pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-    
+
     if time.time() - goal_blink_start >= goal_blink_time:
         goal_blink_state = not goal_blink_state
         goal_blink_start = time.time()
 
     if goal_blink_state:
         pygame.draw.rect(screen, GREEN, (goal_pos[0] * CELL_SIZE, goal_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-    
+
     pygame.draw.rect(screen, RED, (player_pos[0] * CELL_SIZE, player_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
     timer_text_surface = pygame.Surface((250, 50))
     timer_text_surface.fill(YELLOW)
-    screen.blit(timer_text_surface, (10, 10))
+    screen.blit(timer_text_surface, (10, HEIGHT - 60))  
 
     time_text = font.render(f'Time Left: {remaining_time}s', True, BLACK)
-    screen.blit(time_text, (20, 20))
+    screen.blit(time_text, (20, HEIGHT - 50))  
 
     pygame.display.flip()
 
@@ -123,7 +123,7 @@ while running:
 
     elapsed_time = time.time() - start_time
     remaining_time = max(0, timer_duration - int(elapsed_time))
-    
+
     if player_x != target_x or player_y != target_y:
         dx = (target_x - player_x) * animation_speed
         dy = (target_y - player_y) * animation_speed
