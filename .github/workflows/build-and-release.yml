@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
     - name: Checkout code
@@ -45,6 +45,8 @@ jobs:
       run: |
         if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
           mv dist/game dist/game-linux
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          mv dist/game dist/game-macos
         else
           mv dist/game.exe dist/game-windows.exe
         fi
@@ -56,6 +58,13 @@ jobs:
       with:
         name: game-linux
         path: dist/game-linux
+
+    - name: Upload macOS build artifact
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: game-macos
+        path: dist/game-macos
 
     - name: Upload Windows build artifact
       if: matrix.os == 'windows-latest'
@@ -75,6 +84,12 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: game-linux
+        path: ./dist
+
+    - name: Download macOS build artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: game-macos
         path: ./dist
 
     - name: Download Windows build artifact
@@ -102,6 +117,16 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./dist/game-linux
         asset_name: game-linux
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/game-macos
+        asset_name: game-macos
         asset_content_type: application/octet-stream
 
     - name: Upload Windows Release Asset
