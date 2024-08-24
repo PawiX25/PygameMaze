@@ -37,9 +37,6 @@ def generate_maze(width, height):
             stack.pop()
     return maze
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Maze Game")
-
 def generate_goal(maze, min_distance=10):
     while True:
         goal_x = random.randint(0, MAZE_WIDTH - 1)
@@ -49,24 +46,7 @@ def generate_goal(maze, min_distance=10):
             if distance >= min_distance:
                 return goal_x, goal_y
 
-maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
-goal_x, goal_y = generate_goal(maze)
-
-player_x, player_y = 0, 0
-target_x, target_y = player_x, player_y
-animation_progress = 1.0  
-animation_speed = 15  
-
-start_time = time.time()
-timer_duration = 60  
-
-font = pygame.font.SysFont(None, 48)
-
-goal_blink_time = 0.5
-goal_blink_state = True
-goal_blink_start = time.time()
-
-def draw_maze(maze, player_pos, goal_pos, remaining_time):
+def draw_maze(screen, maze, player_pos, goal_pos, remaining_time, font):
     global goal_blink_state, goal_blink_start
 
     screen.fill(WHITE)
@@ -87,57 +67,116 @@ def draw_maze(maze, player_pos, goal_pos, remaining_time):
 
     timer_text_surface = pygame.Surface((250, 50))
     timer_text_surface.fill(YELLOW)
-    screen.blit(timer_text_surface, (10, HEIGHT - 60))  
+    screen.blit(timer_text_surface, (10, HEIGHT - 60))
 
     time_text = font.render(f'Time Left: {remaining_time}s', True, BLACK)
-    screen.blit(time_text, (20, HEIGHT - 50))  
+    screen.blit(time_text, (20, HEIGHT - 50))
 
     pygame.display.flip()
 
-clock = pygame.time.Clock()
-running = True
+def display_restart_screen(screen, font):
+    screen.fill(WHITE)
+    text_lines = [
+        "Game Over!",
+        "Press 'R' to Restart",
+        "Press 'Q' to Quit"
+    ]
+    text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
+    total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
+    y_start = HEIGHT // 2 - total_height // 2
+    for text_surface in text_surfaces:
+        screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+        y_start += text_surface.get_height()
+    pygame.display.flip()
 
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+def main():
+    global goal_blink_time, goal_blink_state, goal_blink_start
 
-    keys = pygame.key.get_pressed()
-    if animation_progress >= 1.0:  
-        new_x, new_y = player_x, player_y
-        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and int(player_x) > 0 and maze[int(player_y)][int(player_x) - 1] == 0:
-            new_x = player_x - 1
-        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and int(player_x) < MAZE_WIDTH - 1 and maze[int(player_y)][int(player_x) + 1] == 0:
-            new_x = player_x + 1
-        if (keys[pygame.K_UP] or keys[pygame.K_w]) and int(player_y) > 0 and maze[int(player_y) - 1][int(player_x)] == 0:
-            new_y = player_y - 1
-        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and int(player_y) < MAZE_HEIGHT - 1 and maze[int(player_y) + 1][int(player_x)] == 0:
-            new_y = player_y + 1
+    goal_blink_time = 0.5
+    goal_blink_state = True
+    goal_blink_start = time.time()
 
-        if (new_x, new_y) != (player_x, player_y):
-            target_x, target_y = new_x, new_y
-            animation_progress = 0.0  
+    while True:
+        font = pygame.font.SysFont(None, 36)  
+        screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Maze Game")
 
-    if animation_progress < 1.0:
-        animation_progress += animation_speed / FPS
-        animation_progress = min(animation_progress, 1.0)  
+        maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
+        goal_x, goal_y = generate_goal(maze)
+        player_x, player_y = 0, 0
+        target_x, target_y = player_x, player_y
+        animation_progress = 1.0
+        animation_speed = 15
 
-        player_x = player_x + (target_x - player_x) * animation_progress
-        player_y = player_y + (target_y - player_y) * animation_progress
+        start_time = time.time()
+        timer_duration = 60
 
-    elapsed_time = time.time() - start_time
-    remaining_time = max(0, timer_duration - int(elapsed_time))
+        clock = pygame.time.Clock()
+        running = True
 
-    if int(player_x) == goal_x and int(player_y) == goal_y:
-        print("Congratulations! You reached the goal!")
-        running = False
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                        running = False
+                    if event.key == pygame.K_q:
+                        pygame.quit()
+                        return
 
-    if remaining_time <= 0:
-        print("Time's up! Game Over.")
-        running = False
+            keys = pygame.key.get_pressed()
+            if animation_progress >= 1.0:
+                new_x, new_y = player_x, player_y
+                if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and int(player_x) > 0 and maze[int(player_y)][int(player_x) - 1] == 0:
+                    new_x = player_x - 1
+                if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and int(player_x) < MAZE_WIDTH - 1 and maze[int(player_y)][int(player_x) + 1] == 0:
+                    new_x = player_x + 1
+                if (keys[pygame.K_UP] or keys[pygame.K_w]) and int(player_y) > 0 and maze[int(player_y) - 1][int(player_x)] == 0:
+                    new_y = player_y - 1
+                if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and int(player_y) < MAZE_HEIGHT - 1 and maze[int(player_y) + 1][int(player_x)] == 0:
+                    new_y = player_y + 1
 
-    draw_maze(maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time)
+                if (new_x, new_y) != (player_x, player_y):
+                    target_x, target_y = new_x, new_y
+                    animation_progress = 0.0
 
-    clock.tick(FPS)
+            if animation_progress < 1.0:
+                animation_progress += animation_speed / FPS
+                animation_progress = min(animation_progress, 1.0)
 
-pygame.quit()
+                player_x = player_x + (target_x - player_x) * animation_progress
+                player_y = player_y + (target_y - player_y) * animation_progress
+
+            elapsed_time = time.time() - start_time
+            remaining_time = max(0, timer_duration - int(elapsed_time))
+
+            if int(player_x) == goal_x and int(player_y) == goal_y:
+                print("Congratulations! You reached the goal!")
+                running = False
+
+            if remaining_time <= 0:
+                print("Time's up! Game Over.")
+                running = False
+
+            draw_maze(screen, maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time, font)
+
+            clock.tick(FPS)
+
+        display_restart_screen(screen, font)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                        break
+                    if event.key == pygame.K_q:
+                        pygame.quit()
+                        return
+
+if __name__ == "__main__":
+    main()
