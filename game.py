@@ -4,10 +4,9 @@ import time
 
 pygame.init()
 
+# Screen dimensions and settings
 WIDTH, HEIGHT = 640, 480
 CELL_SIZE = 20
-MAZE_WIDTH = WIDTH // CELL_SIZE
-MAZE_HEIGHT = HEIGHT // CELL_SIZE
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -15,6 +14,29 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 
+# Difficulty settings
+DIFFICULTY_SETTINGS = {
+    'easy': {
+        'maze_width': 20,
+        'maze_height': 15,
+        'timer_duration': 120,
+        'min_distance': 5
+    },
+    'medium': {
+        'maze_width': 30,
+        'maze_height': 22,
+        'timer_duration': 90,
+        'min_distance': 10
+    },
+    'hard': {
+        'maze_width': 40,
+        'maze_height': 30,
+        'timer_duration': 60,
+        'min_distance': 15
+    }
+}
+
+# Directions for maze generation
 DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 def generate_maze(width, height):
@@ -39,8 +61,8 @@ def generate_maze(width, height):
 
 def generate_goal(maze, min_distance=10):
     while True:
-        goal_x = random.randint(0, MAZE_WIDTH - 1)
-        goal_y = random.randint(0, MAZE_HEIGHT - 1)
+        goal_x = random.randint(0, len(maze[0]) - 1)
+        goal_y = random.randint(0, len(maze) - 1)
         if maze[goal_y][goal_x] == 0 and (goal_x, goal_y) != (0, 0):
             distance = abs(goal_x - 0) + abs(goal_y - 0)
             if distance >= min_distance:
@@ -96,6 +118,7 @@ def show_main_menu(screen, font):
             "Main Menu",
             "Press 'S' to Start",
             "Press 'I' for Instructions",
+            "Press 'D' for Difficulty",
             "Press 'Q' to Quit"
         ]
         text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
@@ -115,8 +138,46 @@ def show_main_menu(screen, font):
                     return "start"
                 if event.key == pygame.K_i:
                     return "instructions"
+                if event.key == pygame.K_d:
+                    return "difficulty"
                 if event.key == pygame.K_q:
                     pygame.quit()
+                    return None
+
+def show_difficulty_menu(screen, font):
+    difficulty = 'medium'
+    while True:
+        screen.fill(WHITE)
+        text_lines = [
+            "Select Difficulty",
+            "Press 'E' for Easy",
+            "Press 'M' for Medium",
+            "Press 'H' for Hard",
+            "Press 'B' to Back"
+        ]
+        text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
+        total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
+        y_start = HEIGHT // 2 - total_height // 2
+        for text_surface in text_surfaces:
+            screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+            y_start += text_surface.get_height()
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return None
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_e:
+                    difficulty = 'easy'
+                    return difficulty
+                if event.key == pygame.K_m:
+                    difficulty = 'medium'
+                    return difficulty
+                if event.key == pygame.K_h:
+                    difficulty = 'hard'
+                    return difficulty
+                if event.key == pygame.K_b:
                     return None
 
 def show_instructions(screen, font):
@@ -148,22 +209,27 @@ def show_instructions(screen, font):
                 if event.key == pygame.K_i:
                     return
 
-def game_loop(screen, font):
+def game_loop(screen, font, difficulty):
+    settings = DIFFICULTY_SETTINGS[difficulty]
+    maze_width = settings['maze_width']
+    maze_height = settings['maze_height']
+    timer_duration = settings['timer_duration']
+    min_distance = settings['min_distance']
+
     global goal_blink_time, goal_blink_state, goal_blink_start
 
     goal_blink_time = 0.5
     goal_blink_state = True
     goal_blink_start = time.time()
 
-    maze = generate_maze(MAZE_WIDTH, MAZE_HEIGHT)
-    goal_x, goal_y = generate_goal(maze)
+    maze = generate_maze(maze_width, maze_height)
+    goal_x, goal_y = generate_goal(maze, min_distance)
     player_x, player_y = 0, 0
     target_x, target_y = player_x, player_y
     animation_progress = 1.0
     animation_speed = 15
 
     start_time = time.time()
-    timer_duration = 60
 
     clock = pygame.time.Clock()
     running = True
@@ -189,11 +255,11 @@ def game_loop(screen, font):
                 new_x, new_y = player_x, player_y
                 if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and int(player_x) > 0 and maze[int(player_y)][int(player_x) - 1] == 0:
                     new_x = player_x - 1
-                if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and int(player_x) < MAZE_WIDTH - 1 and maze[int(player_y)][int(player_x) + 1] == 0:
+                if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and int(player_x) < maze_width - 1 and maze[int(player_y)][int(player_x) + 1] == 0:
                     new_x = player_x + 1
                 if (keys[pygame.K_UP] or keys[pygame.K_w]) and int(player_y) > 0 and maze[int(player_y) - 1][int(player_x)] == 0:
                     new_y = player_y - 1
-                if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and int(player_y) < MAZE_HEIGHT - 1 and maze[int(player_y) + 1][int(player_x)] == 0:
+                if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and int(player_y) < maze_height - 1 and maze[int(player_y) + 1][int(player_x)] == 0:
                     new_y = player_y + 1
 
                 if (new_x, new_y) != (player_x, player_y):
@@ -252,9 +318,17 @@ def main():
         menu_choice = show_main_menu(screen, font)
         if menu_choice == "instructions":
             show_instructions(screen, font)
+        elif menu_choice == "difficulty":
+            difficulty = show_difficulty_menu(screen, font)
+            if difficulty is None:
+                continue
         elif menu_choice == "start":
-            if not game_loop(screen, font):
+            if difficulty is None:
+                difficulty = 'medium'  # Default difficulty if none selected
+            if not game_loop(screen, font, difficulty):
                 break
+
+    pygame.quit()
 
 if __name__ == "__main__":
     main()
