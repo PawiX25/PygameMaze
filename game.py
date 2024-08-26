@@ -4,8 +4,7 @@ import time
 
 pygame.init()
 
-# Screen dimensions and settings
-WIDTH, HEIGHT = 640, 480
+# Settings
 CELL_SIZE = 20
 FPS = 30
 WHITE = (255, 255, 255)
@@ -68,7 +67,7 @@ def generate_goal(maze, min_distance=10):
             if distance >= min_distance:
                 return goal_x, goal_y
 
-def draw_maze(screen, maze, player_pos, goal_pos, remaining_time, font):
+def draw_maze(screen, maze, player_pos, goal_pos, remaining_time, font, cell_size):
     global goal_blink_state, goal_blink_start
 
     screen.fill(WHITE)
@@ -76,23 +75,23 @@ def draw_maze(screen, maze, player_pos, goal_pos, remaining_time, font):
     for y, row in enumerate(maze):
         for x, cell in enumerate(row):
             color = BLACK if cell == 1 else WHITE
-            pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            pygame.draw.rect(screen, color, (x * cell_size, y * cell_size, cell_size, cell_size))
 
     if time.time() - goal_blink_start >= goal_blink_time:
         goal_blink_state = not goal_blink_state
         goal_blink_start = time.time()
 
     if goal_blink_state:
-        pygame.draw.rect(screen, GREEN, (goal_pos[0] * CELL_SIZE, goal_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        pygame.draw.rect(screen, GREEN, (goal_pos[0] * cell_size, goal_pos[1] * cell_size, cell_size, cell_size))
 
-    pygame.draw.rect(screen, RED, (player_pos[0] * CELL_SIZE, player_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    pygame.draw.rect(screen, RED, (player_pos[0] * cell_size, player_pos[1] * cell_size, cell_size, cell_size))
 
     timer_text_surface = pygame.Surface((250, 50))
     timer_text_surface.fill(YELLOW)
-    screen.blit(timer_text_surface, (10, HEIGHT - 60))
+    screen.blit(timer_text_surface, (10, screen.get_height() - 60))
 
     time_text = font.render(f'Time Left: {remaining_time}s', True, BLACK)
-    screen.blit(time_text, (20, HEIGHT - 50))
+    screen.blit(time_text, (20, screen.get_height() - 50))
 
     pygame.display.flip()
 
@@ -105,9 +104,9 @@ def display_game_over_screen(screen, font, message):
     ]
     text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
     total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
-    y_start = HEIGHT // 2 - total_height // 2
+    y_start = screen.get_height() // 2 - total_height // 2
     for text_surface in text_surfaces:
-        screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+        screen.blit(text_surface, (screen.get_width() // 2 - text_surface.get_width() // 2, y_start))
         y_start += text_surface.get_height()
     pygame.display.flip()
 
@@ -123,9 +122,9 @@ def show_main_menu(screen, font):
         ]
         text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
         total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
-        y_start = HEIGHT // 2 - total_height // 2
+        y_start = screen.get_height() // 2 - total_height // 2
         for text_surface in text_surfaces:
-            screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+            screen.blit(text_surface, (screen.get_width() // 2 - text_surface.get_width() // 2, y_start))
             y_start += text_surface.get_height()
         pygame.display.flip()
 
@@ -157,9 +156,9 @@ def show_difficulty_menu(screen, font):
         ]
         text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
         total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
-        y_start = HEIGHT // 2 - total_height // 2
+        y_start = screen.get_height() // 2 - total_height // 2
         for text_surface in text_surfaces:
-            screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+            screen.blit(text_surface, (screen.get_width() // 2 - text_surface.get_width() // 2, y_start))
             y_start += text_surface.get_height()
         pygame.display.flip()
 
@@ -192,9 +191,9 @@ def show_instructions(screen, font):
         ]
         text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
         total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
-        y_start = HEIGHT // 2 - total_height // 2
+        y_start = screen.get_height() // 2 - total_height // 2
         for text_surface in text_surfaces:
-            screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, y_start))
+            screen.blit(text_surface, (screen.get_width() // 2 - text_surface.get_width() // 2, y_start))
             y_start += text_surface.get_height()
         pygame.display.flip()
 
@@ -230,6 +229,11 @@ def game_loop(screen, font, difficulty):
     animation_speed = 15
 
     start_time = time.time()
+
+    # Calculate screen size based on maze size
+    screen_width = maze_width * CELL_SIZE
+    screen_height = maze_height * CELL_SIZE
+    screen = pygame.display.set_mode((screen_width, screen_height))
 
     clock = pygame.time.Clock()
     running = True
@@ -306,13 +310,15 @@ def game_loop(screen, font, difficulty):
                                 pygame.quit()
                                 return False
 
-            draw_maze(screen, maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time, font)
+            draw_maze(screen, maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time, font, CELL_SIZE)
             clock.tick(FPS)
 
 def main():
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    screen = pygame.display.set_mode((640, 480))
     pygame.display.set_caption("Maze Game")
     font = pygame.font.SysFont(None, 36)
+
+    difficulty = 'medium'  # Default difficulty
 
     while True:
         menu_choice = show_main_menu(screen, font)
@@ -323,8 +329,6 @@ def main():
             if difficulty is None:
                 continue
         elif menu_choice == "start":
-            if difficulty is None:
-                difficulty = 'medium'  # Default difficulty if none selected
             if not game_loop(screen, font, difficulty):
                 break
 
