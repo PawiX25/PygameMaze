@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+from collections import deque
 
 pygame.init()
 
@@ -35,7 +36,7 @@ DIFFICULTY_SETTINGS = {
     }
 }
 
-# Directions for maze generation
+# Directions for maze generation and BFS
 DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 def generate_maze(width, height):
@@ -187,7 +188,8 @@ def show_instructions(screen, font):
             "Use arrow keys or WASD to move",
             "Reach the green goal to win",
             "Press 'P' to Pause",
-            "Press 'Q' to Quit"
+            "Press 'Q' to Quit",
+            "Press 'H' for AI Help"
         ]
         text_surfaces = [font.render(line, True, BLACK) for line in text_lines]
         total_height = sum(text_surface.get_height() for text_surface in text_surfaces)
@@ -207,6 +209,39 @@ def show_instructions(screen, font):
                     return
                 if event.key == pygame.K_i:
                     return
+
+def bfs(maze, start, goal):
+    queue = deque([start])
+    came_from = {start: None}
+    
+    while queue:
+        current = queue.popleft()
+        
+        if current == goal:
+            break
+        
+        for dx, dy in DIRS:
+            neighbor = (current[0] + dx, current[1] + dy)
+            if 0 <= neighbor[0] < len(maze[0]) and 0 <= neighbor[1] < len(maze) and maze[neighbor[1]][neighbor[0]] == 0:
+                if neighbor not in came_from:
+                    queue.append(neighbor)
+                    came_from[neighbor] = current
+    
+    # Reconstruct path
+    path = []
+    current = goal
+    while current:
+        path.append(current)
+        current = came_from[current]
+    path.reverse()
+    return path
+
+def animate_ai_movement(screen, maze, path, font, cell_size, fps):
+    for pos in path:
+        screen.fill(WHITE)
+        draw_maze(screen, maze, pos, path[-1], 0, font, cell_size)
+        pygame.display.flip()
+        pygame.time.delay(200)
 
 def game_loop(screen, font, difficulty):
     settings = DIFFICULTY_SETTINGS[difficulty]
@@ -230,7 +265,6 @@ def game_loop(screen, font, difficulty):
 
     start_time = time.time()
 
-    # Calculate screen size based on maze size
     screen_width = maze_width * CELL_SIZE
     screen_height = maze_height * CELL_SIZE
     screen = pygame.display.set_mode((screen_width, screen_height))
@@ -238,6 +272,7 @@ def game_loop(screen, font, difficulty):
     clock = pygame.time.Clock()
     running = True
     paused = False
+    show_solution = False  # AI solution trigger
 
     while running:
         for event in pygame.event.get():
@@ -252,6 +287,14 @@ def game_loop(screen, font, difficulty):
                 if event.key == pygame.K_q:
                     pygame.quit()
                     return False
+                if event.key == pygame.K_h:
+                    show_solution = True  # Trigger AI demonstration
+
+        if show_solution:
+            # Convert player position to integers before calling BFS
+            path = bfs(maze, (int(player_x), int(player_y)), (goal_x, goal_y))
+            animate_ai_movement(screen, maze, path, font, CELL_SIZE, FPS)
+            show_solution = False  # Reset trigger after demonstration
 
         if not paused:
             keys = pygame.key.get_pressed()
@@ -277,62 +320,66 @@ def game_loop(screen, font, difficulty):
                 player_x = player_x + (target_x - player_x) * animation_progress
                 player_y = player_y + (target_y - player_y) * animation_progress
 
-            elapsed_time = time.time() - start_time
-            remaining_time = max(0, timer_duration - int(elapsed_time))
+        elapsed_time = time.time() - start_time
+        remaining_time = max(0, int(timer_duration - elapsed_time))
 
-            if int(player_x) == goal_x and int(player_y) == goal_y:
-                display_game_over_screen(screen, font, "Congratulations! You reached the goal!")
-                pygame.display.flip()
-                while True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
+        draw_maze(screen, maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time, font, CELL_SIZE)
+
+        if int(player_x) == goal_x and int(player_y) == goal_y:
+            display_game_over_screen(screen, font, "Congratulations! You reached the goal!")
+            pygame.display.flip()
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        return False
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_r:
+                            return True
+                        if event.key == pygame.K_q:
                             pygame.quit()
                             return False
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_r:
-                                return True
-                            if event.key == pygame.K_q:
-                                pygame.quit()
-                                return False
 
-            if remaining_time <= 0:
-                display_game_over_screen(screen, font, "Time's up! Game Over.")
-                pygame.display.flip()
-                while True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
+        if remaining_time <= 0:
+            display_game_over_screen(screen, font, "Time's up! Game Over.")
+            pygame.display.flip()
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        return False
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_r:
+                            return True
+                        if event.key == pygame.K_q:
                             pygame.quit()
                             return False
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_r:
-                                return True
-                            if event.key == pygame.K_q:
-                                pygame.quit()
-                                return False
 
-            draw_maze(screen, maze, (int(player_x), int(player_y)), (goal_x, goal_y), remaining_time, font, CELL_SIZE)
-            clock.tick(FPS)
+        clock.tick(FPS)
+
+    return False
 
 def main():
-    screen = pygame.display.set_mode((640, 480))
+    screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Maze Game")
-    font = pygame.font.SysFont(None, 36)
-
-    difficulty = 'medium'  # Default difficulty
+    font = pygame.font.SysFont(None, 48)
+    difficulty = 'medium'
 
     while True:
         menu_choice = show_main_menu(screen, font)
-        if menu_choice == "instructions":
+        if menu_choice == "start":
+            if game_loop(screen, font, difficulty):
+                continue
+            else:
+                break
+        elif menu_choice == "instructions":
             show_instructions(screen, font)
         elif menu_choice == "difficulty":
-            difficulty = show_difficulty_menu(screen, font)
-            if difficulty is None:
-                continue
-        elif menu_choice == "start":
-            if not game_loop(screen, font, difficulty):
-                break
-
-    pygame.quit()
+            new_difficulty = show_difficulty_menu(screen, font)
+            if new_difficulty:
+                difficulty = new_difficulty
+        elif menu_choice is None:
+            break
 
 if __name__ == "__main__":
     main()
