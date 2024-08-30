@@ -40,6 +40,8 @@ This is a Python-based maze game created using the Pygame library. The player na
 
 The objective of the game is to navigate the red square (the player) through the maze to reach the green square (the goal) before time runs out. The maze is randomly generated each time you start a new game.
 
+![Maze Game Screenshot](https://github.com/user-attachments/assets/e13179b4-f954-4c9f-8093-091c206b44d9)
+
 ## Game Controls
 
 - **Move:** Arrow keys or `WASD`
